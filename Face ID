@@ -189,30 +189,4 @@ document.getElementById('snap').addEventListener('click', () => {
 ```markdown
 # Face Attendance App
 
-A Frappe/ERPNext app for masked face recognition attendance with liveness detection and mobile kiosk support.
 
-## Installation
-
-```bash
-# Clone into your GitHub account repository:
-bench get-app https://github.com/umohkenn/face_attendance_app.git
-bench --site your-site install-app face_attendance_app
-```
-
-## Frappe Cloud
-
-1. Log into Frappe Cloud Console.
-2. Go to **Apps** → **Connect Git Repo** → paste: `https://github.com/umohkenn/face_attendance_app`
-3. Select branch `main` → Click **Deploy**.
-4. Rebuild site and migrate.
-
-## Usage
-
-- Enroll employees via **Face Profile** Doctype.
-- Open `/assets/face_attendance_app/kiosk.html` on mobile or kiosk.
-- Click **Check In** to record attendance.
-```
-
----
-
-*Once this is in your GitHub (`https://github.com/umohkenn/face_attendance_app`), install on Frappe Cloud via the above steps.*
