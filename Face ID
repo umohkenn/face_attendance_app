@@ -1,192 +1,146 @@
-# Directory structure
+# face_attendance_app
+
+## Directory Structure
+```
 face_attendance_app/
+├── LICENSE
+├── README.md
+├── setup.py
+├── setup.cfg
+├── pyproject.toml
 ├── face_attendance_app/
 │   ├── __init__.py
 │   ├── hooks.py
 │   ├── api.py
-│   └── doctype/
-│       └── face_profile/
-│           ├── face_profile.json
-│           └── face_profile.py
-├── public/
-│   ├── kiosk.html
-│   └── js/
-│       └── kiosk.js
-├── requirements.txt
-└── README.md
+│   ├── face_recognition_module.py
+│   ├── mask_detection_module.py
+│   ├── liveness_detection_module.py
+│   └── templates/
+│       └── face_kiosk.html
+└── face_attendance_app.egg-info/
 ```
 
 ---
 
-# requirements.txt
-```txt
-frappe
-opencv-python
-face_recognition
-dlib
-tensorflow
-imutils
-flask
-```
-
----
-
-# face_attendance_app/hooks.py
+### File: setup.py
 ```python
-from . import __version__
+from setuptools import setup, find_packages
 
-doc_events = {
-    "Attendance": {
-        "on_submit": "face_attendance_app.api.process_attendance"
-    }
-}
-
-app_name = "face_attendance_app"
-app_title = "Face Attendance App"
-app_publisher = "Umoh Kenn"
-app_description = "Face ID & Mask Detection Attendance for ERPNext"
-app_version = __version__
-app_license = "MIT"
+setup(
+    name="face_attendance_app",
+    version="0.1.0",
+    description="Face ID attendance app for Frappe/ERPNext with mask & liveness detection",
+    author="umohkenn",
+    license="MIT",
+    packages=find_packages(),
+    install_requires=[
+        "frappe>=13.0.0",
+        "face_recognition",
+        "opencv-python",
+        "tensorflow>=2.0.0",
+        "numpy",
+        "Pillow"
+    ],
+)
 ```
 
 ---
 
-# face_attendance_app/api.py
-```python
-import frappe
-import cv2
-import numpy as np
-import face_recognition
-from .doctype.face_profile.face_profile import get_registered_profiles
-from .mask_detector import detect_mask
-from .liveness import check_liveness
+### File: setup.cfg
+```ini
+[metadata]
+name = face_attendance_app
+version = 0.1.0
+description = Face ID attendance app for Frappe/ERPNext with mask & liveness detection
+author = umohkenn
+license = MIT
 
-@frappe.whitelist(allow_guest=True)
-def kiosk_checkin(image_data):
-    # decode base64 image
-    header, encoded = image_data.split(",")
-    img_bytes = np.frombuffer(base64.b64decode(encoded), np.uint8)
-    img = cv2.imdecode(img_bytes, cv2.IMREAD_COLOR)
+[options]
+packages = find:
+install_requires =
+    frappe>=13.0.0
+    face_recognition
+    opencv-python
+    tensorflow>=2.0.0
+    numpy
+    Pillow
 
-    # liveness check
-    if not check_liveness(img):
-        frappe.throw("Liveness check failed")
-
-    # mask detection
-    mask_on = detect_mask(img)
-
-    # face detection & recognition
-    rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    boxes = face_recognition.face_locations(rgb_img)
-    encodings = face_recognition.face_encodings(rgb_img, boxes)
-    profiles = get_registered_profiles()
-
-    for encoding in encodings:
-        matches = face_recognition.compare_faces(
-            [p['encoding'] for p in profiles], encoding
-        )
-        if True in matches:
-            match_idx = matches.index(True)
-            employee = profiles[match_idx]['employee']
-            # create attendance
-            doc = frappe.get_doc({
-                "doctype": "Attendance",
-                "employee": employee,
-                "status": "Present",
-                "mask_status": mask_on and "With Mask" or "No Mask"
-            })
-            doc.insert(ignore_permissions=True)
-            frappe.db.commit()
-            return {"status": "success", "employee": employee}
-
-    frappe.throw("Face not recognized")
+[options.packages.find]
+where = .
 ```
 
 ---
 
-# face_attendance_app/doctype/face_profile/face_profile.json
-```json
-{
-  "doctype": "DocType",
-  "name": "Face Profile",
-  "module": "Face Attendance App",
-  "fields": [
-    {"fieldname": "employee", "label": "Employee", "fieldtype": "Link", "options": "Employee"},
-    {"fieldname": "image", "label": "Image", "fieldtype": "Attach Image"},
-    {"fieldname": "encoding", "label": "Face Encoding", "fieldtype": "Data", "hidden": true}
-  ],
-  "permissions": [{"role": "HR Manager", "read": 1, "write": 1}]
-}
+### File: pyproject.toml
+```toml
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "face_attendance_app"
+version = "0.1.0"
+description = "Face ID attendance app for Frappe/ERPNext with mask & liveness detection"
+authors = [ { name = "umohkenn" } ]
+license = { text = "MIT" }
+
+[project.dependencies]
+frappe = ">=13.0.0"
+face_recognition = "*"
+opencv-python = "*"
+tensorflow = ">=2.0.0"
+numpy = "*"
+Pillow = "*"
 ```
 
 ---
 
-# face_attendance_app/doctype/face_profile/face_profile.py
-```python
-import frappe
-import face_recognition
-
-@frappe.whitelist()
-def register_face(doc, method):
-    # load image
-    img_path = frappe.get_site_path("public", doc.image)
-    image = face_recognition.load_image_file(img_path)
-    encoding = face_recognition.face_encodings(image)[0]
-
-    doc.encoding = encoding.tolist()
-    doc.save()
-
-
-def get_registered_profiles():
-    profiles = frappe.get_all("Face Profile", fields=["name", "employee", "encoding"])
-    return [{
-        'employee': p.employee,
-        'encoding': np.array(p.encoding)
-    } for p in profiles]
-```
-
----
-
-# public/kiosk.html
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Face Kiosk</title>
-</head>
-<body>
-    <video id="video" width="640" height="480" autoplay></video>
-    <button id="snap">Check In</button>
-    <script src="/assets/face_attendance_app/js/kiosk.js"></script>
-</body>
-</html>
-```
-
----
-
-# public/js/kiosk.js
-```javascript
-navigator.mediaDevices.getUserMedia({ video: true })
-.then(stream => {
-  document.getElementById('video').srcObject = stream;
-});
-
-document.getElementById('snap').addEventListener('click', () => {
-  const canvas = document.createElement('canvas');
-  canvas.width = 640; canvas.height = 480;
-  canvas.getContext('2d').drawImage(document.getElementById('video'), 0, 0);
-  const data = canvas.toDataURL('image/jpeg');
-  fetch('/api/method/face_attendance_app.api.kiosk_checkin', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({image_data: data})
-  }).then(r => r.json()).then(console.log).catch(console.error);
-});
-```
-
----
-
-# README.md
+### File: README.md
 ```markdown
 # Face Attendance App
 
+Face ID attendance app for ERPNext with mask & liveness detection and mobile kiosk mode.
 
+## Features
+- Face recognition for employees
+- Mask detection enforcement
+- Basic liveness detection (eye-blink)
+- Face registration/enrollment portal
+- Kiosk web page for desktop & mobile
+- Automatic Attendance record creation in ERPNext
+
+## Requirements
+- Python 3.8+
+- Frappe/ERPNext bench environment
+- Libraries: face_recognition, opencv-python, tensorflow, numpy, Pillow
+
+## Installation
+
+**On Bench**:
+```bash
+bench get-app face_attendance_app https://github.com/umohkenn/face_attendance_app.git
+bench --site <your-site> install-app face_attendance_app
+bench build
+bench restart
+```
+
+**On Frappe Cloud**:
+1. Link your GitHub repo `umohkenn/face_attendance_app` in Frappe Cloud dashboard.
+2. Deploy & rebuild assets.
+3. Visit `/desk#page/face-kiosk` to start kiosk mode.
+
+## Face Enrollment
+- Upload employee photos under "Employee Face" doctype.
+- Run `bench migrate` to register doctypes.
+
+## Pushing updates
+If you've made changes and want to re-upload to GitHub:
+```bash
+git add .
+git commit -m "Update app code"
+git push origin master
+```
+
+## GitHub
+App repository: https://github.com/umohkenn/face_attendance_app
+```
