@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "face_attendance_app"
+version = "0.1.0"
+description = "Face ID attendance app for Frappe/ERPNext with mask and liveness detection"
+authors = [ { name = "umohkenn" } ]
+license = { text = "MIT" }
+
+[project.dependencies]
+frappe = ">=13.0.0"
+face_recognition = "*"
+opencv-python = "*"
+tensorflow = ">=2.0.0"
+numpy = "*"
+Pillow = "*"
