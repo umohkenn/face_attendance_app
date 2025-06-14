@@ -39,3 +39,15 @@ git commit -m "Describe your changes"
 git push origin main
 ```
 
+
+## Upload to Frappe Cloud
+
+To install the app on Frappe Cloud or a managed ERPNext instance, link your GitHub repository and deploy:
+
+1. Push this repository to GitHub.
+2. In the Frappe Cloud dashboard, create a new site or select an existing one.
+3. Under **Install Apps**, choose **Install from GitHub** and enter the repo URL, for example:
+   `https://github.com/yourusername/face_attendance_app.git`
+4. Deploy the app and run `bench build` if prompted.
+
+After deployment, open `/face_kiosk` on your site to use the face recognition kiosk.
