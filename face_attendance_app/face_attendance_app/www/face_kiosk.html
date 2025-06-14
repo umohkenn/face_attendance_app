@@ -1,0 +1,11 @@
+{% extends "templates/web.html" %}
+{% block page_content %}
+<div class="kiosk-wrapper">
+    <h2>Employee Check In</h2>
+    <video id="video" autoplay></video>
+    <button id="checkin-btn">Check In</button>
+    <p id="status"></p>
+</div>
+<script src="/assets/face_attendance_app/js/kiosk.js"></script>
+<link rel="stylesheet" href="/assets/face_attendance_app/css/kiosk.css">
+{% endblock %}

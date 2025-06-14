@@ -1,0 +1,31 @@
+.kiosk-wrapper {
+    max-width: 360px;
+    margin: 40px auto;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-family: Arial, sans-serif;
+}
+
+#video {
+    width: 100%;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+#checkin-btn {
+    background-color: #f07427;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#status {
+    margin-top: 10px;
+    font-weight: bold;
+}
